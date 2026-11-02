@@ -1,0 +1,28 @@
+# ===== Maven / Java =====
+target/
+*.class
+*.log
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# ===== IDEs =====
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+.factorypath
+
+# ===== Oracle Wallet (credenciales: NUNCA subir a Git) =====
+Wallet_*/
+wallet/
+*.zip
+
+# ===== Variables de entorno locales =====
+.env
+
+# ===== Sistema operativo =====
+.DS_Store
+Thumbs.db
