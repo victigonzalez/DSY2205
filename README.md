@@ -1,7 +1,19 @@
-# 💬 Foro en Línea — Backend con microservicios
+# 💬 Ágora — Foro en Línea (Full Stack)
 
-Backend del **Sistema de Foros en Línea** para la asignatura **Desarrollo Full Stack III (DSY2205)**,
-Experiencia 1, Semana 2: *"Programando nuestro BackEnd"*.
+**Sistema de Foros en Línea** para la asignatura **Desarrollo Full Stack III (DSY2205)**.
+
+- **Semana 2**: backend con microservicios y Oracle Cloud.
+- **Semana 5** (*"Desarrollando nuestro proyecto bajo lineamientos empresariales"*):
+  - arquetipo Maven y patrones de diseño;
+  - tercer microservicio;
+  - frontend Angular **Ágora**;
+  - despliegue con Docker en la nube.
+
+| Parte | Documentación |
+|---|---|
+| Frontend Angular 22 + Bootstrap 5.3 | [agora-frontend/README.md](agora-frontend/README.md) |
+| Arquetipo Maven | [arquetipo/README.md](arquetipo/README.md) |
+| Docker, Docker Hub y Play with Docker | [DESPLIEGUE.md](DESPLIEGUE.md) |
 
 Construido con **Spring Boot 3** sobre **Java 17** y una base de datos **Oracle Autonomous Database**
 (Oracle Cloud), con conexión mediante **Wallet**.
@@ -31,6 +43,10 @@ foro-backend/
 ├── ms-foro/                       ← microservicio 2 (cl.duoc.foro.publicaciones)
 ├── ms-moderacion/                 ← microservicio 3 (cl.duoc.foro.moderacion), generado con el arquetipo
 ├── arquetipo/                     ← arquetipo Maven foro-microservicio-archetype
+├── agora-frontend/                ← frontend Angular 22 + Bootstrap (Ágora)
+├── docker-compose.yml             ← construir y ejecutar los 4 contenedores
+├── docker-compose.pwd.yml         ← ejecutar en Play with Docker desde Docker Hub
+├── publicar-imagenes.ps1          ← build + push a Docker Hub
 └── postman/
     └── Foro_Microservicios.postman_collection.json
 ```
@@ -228,6 +244,15 @@ Todos los errores responden con la misma estructura, gracias a `GlobalExceptionH
 3. Resultado esperado: **56 peticiones y 142 validaciones exitosas**. La colección se puede ejecutar varias veces seguidas.
 
 Para correrla por consola: `npx newman run postman/Foro_Microservicios.postman_collection.json`
+
+## Estrategia de ramas (Git)
+
+Se usa **Trunk Based Development con ramas cortas**:
+- `main` es el tronco y siempre compila con sus tests en verde.
+- Cada funcionalidad se desarrolla en una rama `feature/...` y vuelve a `main` con un merge `--no-ff`, para que quede visible en el historial.
+- Ramas: `feature/arquetipo`, `feature/ms-moderacion`, `feature/frontend` y `feature/docker`.
+
+Se ve con: `git log --oneline --graph`.
 
 ## Buenas prácticas aplicadas
 
