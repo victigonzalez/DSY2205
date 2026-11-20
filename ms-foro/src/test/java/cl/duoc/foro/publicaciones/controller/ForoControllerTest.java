@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Pruebas de punta a punta de ms-foro contra H2 con los datos de script_foro.sql.
  *
  * Usuarios del script: 1=admin (ADMIN), 2=moderador (MODERADOR), 3=victor y 4=camila (USUARIO).
- * Tema 6 y comentario 6 vienen BANEADOS.
+ * Tema 6 y comentario 6 vienen BANEADOS. (La moderación se prueba en ms-moderacion.)
  */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:${random.uuid};MODE=Oracle;DEFAULT_NULL_ORDERING=HIGH",
@@ -200,57 +200,6 @@ class ForoControllerTest {
         void usuarioNoEliminaComentarioAjeno() throws Exception {
             mvc.perform(delete("/api/comentarios/1").header(H, VICTOR)).andExpect(status().isForbidden());
             mvc.perform(delete("/api/comentarios/1").header(H, CAMILA)).andExpect(status().isNoContent());
-        }
-    }
-
-    @Nested
-    class Moderacion {
-
-        @Test
-        void usuarioComunNoPuedeModerar() throws Exception {
-            mvc.perform(get("/api/moderacion/temas").header(H, VICTOR)).andExpect(status().isForbidden());
-        }
-
-        @Test
-        void listaContenidoBaneado() throws Exception {
-            mvc.perform(get("/api/moderacion/temas").header(H, MODERADOR))
-                    .andExpect(jsonPath("$", hasSize(1)))
-                    .andExpect(jsonPath("$[0].motivoBaneo").exists());
-            mvc.perform(get("/api/moderacion/comentarios").header(H, ADMIN)).andExpect(jsonPath("$", hasSize(1)));
-        }
-
-        @Test
-        void banearYDesbanearTema() throws Exception {
-            mvc.perform(put("/api/moderacion/temas/4/banear").header(H, MODERADOR).contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"motivo\":\"Contenido duplicado\"}"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.estado").value("BANEADO"));
-            mvc.perform(get("/api/temas/4")).andExpect(status().isGone());
-            mvc.perform(get("/api/temas")).andExpect(jsonPath("$", hasSize(4)));
-
-            // banear dos veces → 409
-            mvc.perform(put("/api/moderacion/temas/4/banear").header(H, MODERADOR).contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"motivo\":\"Otra vez\"}"))
-                    .andExpect(status().isConflict());
-
-            mvc.perform(put("/api/moderacion/temas/4/desbanear").header(H, ADMIN))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.estado").value("ACTIVO"))
-                    .andExpect(jsonPath("$.motivoBaneo").doesNotExist());
-        }
-
-        @Test
-        void banearComentarioExigeMotivo() throws Exception {
-            mvc.perform(put("/api/moderacion/comentarios/5/banear").header(H, MODERADOR)
-                            .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.detalles.motivo").exists());
-            mvc.perform(put("/api/moderacion/comentarios/5/banear").header(H, MODERADOR)
-                            .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"Spam publicitario\"}"))
-                    .andExpect(status().isOk());
-            mvc.perform(get("/api/temas/4/comentarios")).andExpect(jsonPath("$", hasSize(0)));
-            mvc.perform(put("/api/moderacion/comentarios/6/desbanear").header(H, MODERADOR))
-                    .andExpect(jsonPath("$.estado").value("ACTIVO"));
         }
     }
 }

@@ -78,6 +78,5 @@ class ForoRepositoryTest {
     @Test
     void comentariosVisiblesExcluyenBaneados() {
         assertThat(comentarioRepository.findByTemaIdAndEstadoOrderByFechaCreacionAscIdAsc(3L, Estado.ACTIVO)).isEmpty();
-        assertThat(comentarioRepository.findByEstadoOrderByIdAsc(Estado.BANEADO)).hasSize(1);
     }
 }

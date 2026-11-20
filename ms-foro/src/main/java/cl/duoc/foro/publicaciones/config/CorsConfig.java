@@ -5,9 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** CORS: qué frontends (dominios) pueden consumir esta API. */
+/**
+ * [Arquetipo] CORS: qué frontends (dominios) pueden consumir la API.
+ * Se configura con la propiedad app.cors.origenes (separados por coma).
+ */
 @Configuration
-public class AppConfig implements WebMvcConfigurer {
+public class CorsConfig implements WebMvcConfigurer {
 
     @Value("${app.cors.origenes}")
     private String[] origenesPermitidos;
