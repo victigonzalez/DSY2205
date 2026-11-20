@@ -1,0 +1,62 @@
+# ============================================================
+# Ágora — Foro en Línea · Docker Compose (construcción local)
+# ------------------------------------------------------------
+# Construye y levanta los 3 microservicios + el frontend Angular.
+# Los microservicios se conectan a Oracle Autonomous Database (Oracle Cloud)
+# con el Wallet montado como volumen de solo lectura (nunca dentro de la imagen).
+#
+# Requisitos en esta carpeta:
+#   · Wallet_foro/            → Wallet descomprimido (está en .gitignore)
+#   · .env                    → DB_PASSWORD=... (copiar desde .env.example)
+#
+# Uso:
+#   docker compose up --build -d
+#   docker compose ps
+#   docker compose logs -f ms-usuarios
+#   docker compose down
+#
+# URLs:  frontend http://localhost:8080
+#        ms-usuarios 8081 · ms-foro 8082 · ms-moderacion 8083 (Postman)
+# ============================================================
+name: agora
+
+x-backend: &backend
+  environment:
+    PERFIL: oracle
+    DB_SERVICIO: ${DB_SERVICIO:-foro_high}
+    DB_USUARIO: ${DB_USUARIO:-ADMIN}
+    DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+    DB_WALLET: /wallet
+    CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:8080,http://localhost:4200}
+  volumes:
+    - ./Wallet_foro:/wallet:ro
+  networks: [agora-red]
+  restart: unless-stopped
+
+services:
+  ms-usuarios:
+    <<: *backend
+    build: ./ms-usuarios
+    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-usuarios:1.0
+    container_name: agora-ms-usuarios
+    ports: ["8081:8081"]
+
+  ms-foro:
+    <<: *backend
+    build: ./ms-foro
+    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-foro:1.0
+    container_name: agora-ms-foro
+    ports: ["8082:8082"]
+    depends_on: [ms-usuarios]
+
+  ms-moderacion:
+    <<: *backend
+    build: ./ms-moderacion
+    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-moderacion:1.0
+    container_name: agora-ms-moderacion
+    ports: ["8083:8083"]
+    depends_on: [ms-usuarios]
+
+networks:
+  agora-red:
+    name: agora-red
