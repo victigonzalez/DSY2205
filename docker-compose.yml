@@ -28,6 +28,8 @@ x-backend: &backend
     DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
     DB_WALLET: /wallet
     CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:8080,http://localhost:4200}
+    # Limita la memoria de cada JVM (3 microservicios caben en una instancia pequeña)
+    JAVA_TOOL_OPTIONS: -Xms128m -Xmx320m
   volumes:
     - ./Wallet_foro:/wallet:ro
   networks: [agora-red]
@@ -56,6 +58,14 @@ services:
     container_name: agora-ms-moderacion
     ports: ["8083:8083"]
     depends_on: [ms-usuarios]
+
+  frontend:
+    build: ./agora-frontend
+    image: ${DOCKERHUB_USUARIO:-agora}/agora-frontend:1.0
+    container_name: agora-frontend
+    ports: ["8080:80"]
+    networks: [agora-red]
+    restart: unless-stopped
 
 networks:
   agora-red:
