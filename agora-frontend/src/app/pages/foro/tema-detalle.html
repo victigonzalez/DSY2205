@@ -1,0 +1,193 @@
+@let t = tema();
+@if (!t || !visible()) {
+  <section class="container-xl seccion">
+    <div class="vacio">
+      <i class="bi bi-chat-square-x" aria-hidden="true"></i>
+      @if (t && t.estado === 'BANEADO') {
+        <h1 class="h3">Este tema fue retirado por la moderación</h1>
+        <p>Incumplía las normas del foro y ya no está disponible.</p>
+      } @else {
+        <h1 class="h3">Este tema no existe</h1>
+        <p>Puede que haya sido eliminado por su autor.</p>
+      }
+      <a class="btn btn-primary" routerLink="/temas">Ver otros temas</a>
+    </div>
+  </section>
+} @else {
+  <section class="container-xl seccion detalle" [style.--cat]="t.categoria?.color">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/temas">Temas</a></li>
+        @if (t.categoria) {
+          <li class="breadcrumb-item"><a [routerLink]="['/categorias', t.categoria.slug]">{{ t.categoria.nombre }}</a></li>
+        }
+        <li class="breadcrumb-item active text-truncate" aria-current="page">{{ t.titulo }}</li>
+      </ol>
+    </nav>
+
+    <div class="row g-4">
+      <div class="col-12 col-lg-8">
+        @if (t.estado === 'BANEADO') {
+          <div class="alert alert-danger d-flex gap-2 align-items-start" role="alert">
+            <i class="bi bi-slash-circle-fill mt-1" aria-hidden="true"></i>
+            <div>
+              <strong>Tema baneado.</strong> Solo lo ven su autor y la moderación.
+              <div>Motivo: {{ t.motivoBaneo }}</div>
+            </div>
+          </div>
+        }
+
+        <article class="publicacion">
+          <h1 class="publicacion-titulo">{{ t.titulo }}</h1>
+          <div class="publicacion-autor">
+            <app-avatar [nombre]="t.autor?.nombre" [username]="t.autor?.username" [tam]="44" />
+            <div>
+              <strong>{{ t.autor?.nombre ?? 'Usuario eliminado' }}</strong>
+              <div class="small text-body-secondary">
+                <time [attr.datetime]="t.fechaCreacion" [title]="t.fechaCreacion | date: 'medium'">Publicado {{ t.fechaCreacion | fechaRelativa }}</time>
+                @if (t.fechaEdicion) { (editado) }
+              </div>
+            </div>
+          </div>
+          <p class="publicacion-contenido">{{ t.contenido }}</p>
+
+          <div class="acciones">
+            @if (temas.puedeEditar(t)) {
+              <a class="btn btn-sm btn-outline-primary" [routerLink]="['/temas', t.id, 'editar']"><i class="bi bi-pencil" aria-hidden="true"></i> Editar</a>
+            }
+            @if (temas.puedeEliminar(t)) {
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="eliminarTema()"><i class="bi bi-trash" aria-hidden="true"></i> Eliminar</button>
+            }
+            @if (auth.puedeModerar()) {
+              @if (t.estado === 'ACTIVO') {
+                <button class="btn btn-sm btn-outline-dark" type="button" (click)="abrirBaneo({ tipo: 'tema', id: t.id })"><i class="bi bi-slash-circle" aria-hidden="true"></i> Banear tema</button>
+              } @else {
+                <button class="btn btn-sm btn-outline-success" type="button" (click)="desbanearTema()"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Desbanear</button>
+              }
+            }
+          </div>
+
+          @if (baneando()?.tipo === 'tema') {
+            <ng-container *ngTemplateOutlet="panelBaneo" />
+          }
+        </article>
+
+        <h2 class="titulo-seccion mt-5" id="conversacion">
+          {{ conversacion().length }} {{ conversacion().length === 1 ? 'respuesta' : 'respuestas' }}
+        </h2>
+
+        <ol class="conversacion" aria-labelledby="conversacion">
+          @for (c of conversacion(); track c.id) {
+            <li class="mensaje" [class.mensaje-propio]="c.autorId === auth.usuarioActual()?.id" [id]="'comentario-' + c.id">
+              <app-avatar [nombre]="c.autor?.nombre" [username]="c.autor?.username" [tam]="36" />
+              <div class="burbuja">
+                <div class="burbuja-cabecera">
+                  <strong>{{ c.autor?.username ?? 'usuario eliminado' }}</strong>
+                  @if (c.autorId === t.autorId) { <span class="badge badge-autor">autor</span> }
+                  <time class="text-body-secondary small" [attr.datetime]="c.fechaCreacion">{{ c.fechaCreacion | fechaRelativa }}</time>
+                  @if (c.fechaEdicion) { <span class="small text-body-secondary">(editado)</span> }
+                </div>
+
+                @if (editando() === c.id) {
+                  <form (ngSubmit)="guardarEdicion(c.id)" novalidate>
+                    <label class="visually-hidden" [for]="'editar-' + c.id">Editar comentario</label>
+                    <textarea class="form-control" [id]="'editar-' + c.id" rows="3" [formControl]="edicion"
+                              required minlength="2" maxlength="2000" [ngClass]="clase(edicion, true)"></textarea>
+                    <app-error-campo [control]="edicion" [enviado]="true" />
+                    <div class="d-flex gap-2 mt-2">
+                      <button class="btn btn-sm btn-primary" type="submit">Guardar</button>
+                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="editando.set(null)">Cancelar</button>
+                    </div>
+                  </form>
+                } @else {
+                  <p class="mb-0">{{ c.contenido }}</p>
+                }
+
+                @if (editando() !== c.id) {
+                  <div class="burbuja-acciones">
+                    @if (comentarios.puedeEditar(c)) {
+                      <button type="button" class="btn btn-link btn-sm" (click)="editar(c)">Editar</button>
+                    }
+                    @if (comentarios.puedeEliminar(c)) {
+                      <button type="button" class="btn btn-link btn-sm text-danger" (click)="eliminarComentario(c.id)">Eliminar</button>
+                    }
+                    @if (auth.puedeModerar()) {
+                      <button type="button" class="btn btn-link btn-sm text-dark" (click)="abrirBaneo({ tipo: 'comentario', id: c.id })">Banear</button>
+                    }
+                  </div>
+                }
+                @if (baneando()?.tipo === 'comentario' && baneando()?.id === c.id) {
+                  <ng-container *ngTemplateOutlet="panelBaneo" />
+                }
+              </div>
+            </li>
+          } @empty {
+            <li class="text-body-secondary">Todavía nadie responde. Sé la primera persona en comentar.</li>
+          }
+        </ol>
+
+        @if (t.estado === 'ACTIVO') {
+          @if (auth.autenticado()) {
+            <form class="nuevo-comentario" (ngSubmit)="comentar()" novalidate>
+              <label for="nuevo-comentario" class="form-label fw-semibold">Tu respuesta</label>
+              <textarea id="nuevo-comentario" class="form-control" rows="4" [formControl]="nuevo" required
+                        minlength="2" maxlength="2000" placeholder="Escribe con respeto. Puedes discrepar sin ofender."
+                        [ngClass]="clase(nuevo, enviado())" aria-describedby="nuevo-ayuda nuevo-error"></textarea>
+              <div class="d-flex justify-content-between">
+                <app-error-campo [control]="nuevo" [enviado]="enviado()" idError="nuevo-error" />
+                <span id="nuevo-ayuda" class="form-text ms-auto">{{ nuevo.value.length }}/2000</span>
+              </div>
+              <button class="btn btn-primary mt-2" type="submit">Publicar respuesta</button>
+            </form>
+          } @else {
+            <div class="aviso-sesion">
+              <a routerLink="/login" [queryParams]="{ volver: '/temas/' + t.id }">Inicia sesión</a> o
+              <a routerLink="/registro">crea una cuenta</a> para responder.
+            </div>
+          }
+        }
+      </div>
+
+      <aside class="col-12 col-lg-4">
+        <div class="panel-lateral">
+          <h2 class="panel-titulo">Sobre el autor</h2>
+          <div class="d-flex gap-3 align-items-center">
+            <app-avatar [nombre]="t.autor?.nombre" [username]="t.autor?.username" [tam]="48" />
+            <div>
+              <strong>&#64;{{ t.autor?.username }}</strong>
+              <div class="small text-body-secondary">Miembro desde {{ t.autor?.fechaRegistro | date: 'MMMM yyyy' }}</div>
+            </div>
+          </div>
+          @if (t.autor?.bio) {
+            <p class="mt-3 mb-0">{{ t.autor?.bio }}</p>
+          }
+        </div>
+        @if (t.categoria) {
+          <a class="tesela-categoria" [routerLink]="['/categorias', t.categoria.slug]" [style.--cat]="t.categoria.color">
+            <i class="bi {{ t.categoria.icono }}" aria-hidden="true"></i>
+            <span class="tesela-nombre">Más en {{ t.categoria.nombre }}</span>
+            <span class="tesela-descripcion">{{ t.categoria.descripcion }}</span>
+          </a>
+        }
+      </aside>
+    </div>
+  </section>
+}
+
+<ng-template #panelBaneo>
+  <form class="panel-baneo" (ngSubmit)="confirmarBaneo()" novalidate>
+    <label for="motivo-baneo" class="form-label fw-semibold">Motivo del baneo</label>
+    <div class="d-flex flex-wrap gap-1 mb-2">
+      @for (m of motivosRapidos; track m) {
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="motivo.setValue(m); motivo.markAsDirty()">{{ m }}</button>
+      }
+    </div>
+    <input id="motivo-baneo" class="form-control" [formControl]="motivo" required minlength="5" maxlength="250"
+           placeholder="Explica qué norma se incumplió" [ngClass]="clase(motivo, false)" aria-describedby="motivo-error" />
+    <app-error-campo [control]="motivo" idError="motivo-error" />
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-sm btn-danger" type="submit">Confirmar baneo</button>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="baneando.set(null)">Cancelar</button>
+    </div>
+  </form>
+</ng-template>

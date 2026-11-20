@@ -1,0 +1,79 @@
+<section class="portada">
+  <div class="container-xl">
+    <div class="row align-items-center g-4">
+      <div class="col-12 col-lg-7">
+        <h1 class="portada-titulo">La plaza donde se conversa.</h1>
+        <p class="portada-bajada">
+          {{ totalTemas() }} conversaciones abiertas sobre tecnología, juegos, cine, deportes y música.
+          Pregunta, responde o simplemente lee.
+        </p>
+      </div>
+      <div class="col-12 col-lg-5">
+        <form class="burbuja-busqueda" role="search" (ngSubmit)="buscar()">
+          <label for="buscar-portada" class="form-label">¿De qué quieres hablar?</label>
+          <div class="input-group input-group-lg">
+            <input id="buscar-portada" class="form-control" type="search" name="q" [(ngModel)]="texto"
+                   placeholder="Ej: juegos cooperativos" maxlength="80" />
+            <button class="btn btn-acento" type="submit" aria-label="Buscar"><i class="bi bi-search" aria-hidden="true"></i></button>
+          </div>
+          @if (!auth.autenticado()) {
+            <p class="small mb-0 mt-2">¿Tienes algo que preguntar? <a routerLink="/registro">Crea tu cuenta</a> y publica tu primer tema.</p>
+          } @else {
+            <p class="small mb-0 mt-2">¿No encuentras lo que buscas? <a routerLink="/temas/nuevo">Abre un tema nuevo</a>.</p>
+          }
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-xl seccion" aria-labelledby="titulo-categorias">
+  <h2 id="titulo-categorias" class="titulo-seccion">Explora por categoría</h2>
+  <div class="row g-3">
+    @for (c of categorias.conConteo(); track c.id) {
+      <div class="col-12 col-sm-6 col-lg-4">
+        <a class="tesela-categoria" [routerLink]="['/categorias', c.slug]" [style.--cat]="c.color">
+          <i class="bi {{ c.icono }}" aria-hidden="true"></i>
+          <span class="tesela-nombre">{{ c.nombre }}</span>
+          <span class="tesela-descripcion">{{ c.descripcion }}</span>
+          <span class="tesela-conteo">{{ c.cantidadTemas }} {{ c.cantidadTemas === 1 ? 'tema' : 'temas' }}</span>
+        </a>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="container-xl seccion">
+  <div class="row g-4">
+    <div class="col-12 col-lg-8">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-baseline mb-3">
+        <h2 class="titulo-seccion mb-0">Conversaciones recientes</h2>
+        <a routerLink="/temas">Ver todos los temas</a>
+      </div>
+      <div class="lista-temas">
+        @for (t of recientes(); track t.id) {
+          <app-tema-item [tema]="t" />
+        }
+      </div>
+    </div>
+
+    <aside class="col-12 col-lg-4">
+      <div class="panel-lateral">
+        <h2 class="panel-titulo">Esperan una respuesta</h2>
+        @for (t of sinResponder(); track t.id) {
+          <a class="enlace-lateral" [routerLink]="['/temas', t.id]" [style.--cat]="t.categoria?.color">{{ t.titulo }}</a>
+        } @empty {
+          <p class="text-body-secondary mb-0">Todos los temas tienen al menos una respuesta.</p>
+        }
+      </div>
+      <div class="panel-lateral">
+        <h2 class="panel-titulo">Los más comentados</h2>
+        @for (t of populares(); track t.id) {
+          <a class="enlace-lateral" [routerLink]="['/temas', t.id]" [style.--cat]="t.categoria?.color">
+            {{ t.titulo }} <span class="text-body-secondary">({{ t.cantidadComentarios }})</span>
+          </a>
+        }
+      </div>
+    </aside>
+  </div>
+</section>

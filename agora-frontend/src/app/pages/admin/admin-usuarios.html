@@ -1,0 +1,135 @@
+<section class="cabecera-listado cabecera-admin">
+  <div class="container-xl d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end">
+    <div>
+      <h1>Usuarios</h1>
+      <p class="mb-0">{{ admin.usuarios().length }} cuentas. Cambia roles, activa o desactiva cuentas y crea usuarios.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-light" type="button" (click)="restablecer()">Restablecer datos de ejemplo</button>
+      <button class="btn btn-acento" type="button" (click)="nuevo()"><i class="bi bi-person-plus" aria-hidden="true"></i> Nuevo usuario</button>
+    </div>
+  </div>
+</section>
+
+<section class="container-xl seccion">
+  <div class="row g-4">
+    <div class="col-12" [class.col-xl-8]="editandoId() !== null">
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-sm-7">
+          <label for="buscar-usuario" class="visually-hidden">Buscar usuario</label>
+          <input id="buscar-usuario" class="form-control" type="search" placeholder="Buscar por nombre, usuario o correo"
+                 [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" maxlength="60" />
+        </div>
+        <div class="col-12 col-sm-5">
+          <label for="filtro-rol" class="visually-hidden">Filtrar por rol</label>
+          <select id="filtro-rol" class="form-select" [value]="filtroRol()" (change)="filtroRol.set($any($event.target).value)">
+            <option value="">Todos los roles</option>
+            @for (r of roles; track r.valor) { <option [value]="r.valor">{{ r.nombre }}</option> }
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive tabla-panel">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Usuarios registrados</caption>
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col" class="d-none d-lg-table-cell">Correo</th>
+              <th scope="col">Rol</th>
+              <th scope="col" class="d-none d-md-table-cell">Estado</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios(); track u.id) {
+              <tr [class.fila-inactiva]="!u.activo">
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <app-avatar [nombre]="u.nombre" [username]="u.username" [tam]="32" />
+                    <div>
+                      <strong>{{ u.nombre }}</strong>
+                      <div class="small text-body-secondary">&#64;{{ u.username }}, desde {{ u.fechaRegistro | date: 'MMM yyyy' }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="d-none d-lg-table-cell">{{ u.correo }}</td>
+                <td><span class="insignia-rol" [attr.data-rol]="u.rol">{{ u.rol }}</span></td>
+                <td class="d-none d-md-table-cell">
+                  @if (u.activo) { <span class="text-success">Activa</span> } @else { <span class="text-danger">Desactivada</span> }
+                </td>
+                <td class="text-end text-nowrap">
+                  <button class="btn btn-sm btn-outline-primary" type="button" (click)="editar(u)" [attr.aria-label]="'Editar a ' + u.username"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+                  @if (u.id !== auth.usuarioActual()?.id) {
+                    <button class="btn btn-sm btn-outline-secondary ms-1" type="button" (click)="alternarActivo(u)"
+                            [attr.aria-label]="(u.activo ? 'Desactivar a ' : 'Activar a ') + u.username">
+                      <i class="bi" [class.bi-pause-circle]="u.activo" [class.bi-play-circle]="!u.activo" aria-hidden="true"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger ms-1" type="button" (click)="eliminar(u)" [attr.aria-label]="'Eliminar a ' + u.username"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="text-center text-body-secondary py-4">Ningún usuario coincide con la búsqueda.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (editandoId() !== null) {
+      <div class="col-12 col-xl-4">
+        <form class="panel-formulario" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 mb-0">{{ editandoId() === 0 ? 'Nuevo usuario' : 'Editar usuario' }}</h2>
+            <button type="button" class="btn-close" (click)="cerrar()" aria-label="Cerrar formulario"></button>
+          </div>
+          <div class="mb-3">
+            <label for="a-nombre" class="form-label">Nombre y apellido</label>
+            <input id="a-nombre" class="form-control" formControlName="nombre" required minlength="5" maxlength="100" [ngClass]="clase('nombre')" />
+            <app-error-campo [control]="form.controls.nombre" [enviado]="enviado()" />
+          </div>
+          <div class="mb-3">
+            <label for="a-username" class="form-label">Nombre de usuario</label>
+            <input id="a-username" class="form-control" formControlName="username" required minlength="3" maxlength="30" [ngClass]="clase('username')" />
+            <app-error-campo [control]="form.controls.username" [enviado]="enviado()" />
+          </div>
+          <div class="mb-3">
+            <label for="a-correo" class="form-label">Correo</label>
+            <input id="a-correo" class="form-control" type="email" formControlName="correo" required maxlength="120" [ngClass]="clase('correo')" />
+            <app-error-campo [control]="form.controls.correo" [enviado]="enviado()" />
+          </div>
+          <div class="mb-3">
+            <label for="a-rol" class="form-label">Rol</label>
+            <select id="a-rol" class="form-select" formControlName="rol" required [ngClass]="clase('rol')" aria-describedby="a-rol-ayuda">
+              @for (r of roles; track r.valor) { <option [value]="r.valor">{{ r.nombre }}</option> }
+            </select>
+            <div id="a-rol-ayuda" class="form-text">
+              @for (r of roles; track r.valor) { @if (r.valor === form.controls.rol.value) { {{ r.descripcion }}. } }
+            </div>
+          </div>
+          <div class="form-check form-switch mb-3">
+            <input id="a-activo" class="form-check-input" type="checkbox" role="switch" formControlName="activo" />
+            <label for="a-activo" class="form-check-label">Cuenta activa</label>
+          </div>
+          <div class="mb-3">
+            <label for="a-password" class="form-label">
+              {{ editandoId() === 0 ? 'Contraseña' : 'Nueva contraseña' }}
+              @if (editandoId() !== 0) { <span class="text-body-secondary">(déjala vacía para no cambiarla)</span> }
+            </label>
+            <input id="a-password" class="form-control" type="password" formControlName="password" [attr.maxlength]="max"
+                   [required]="editandoId() === 0" autocomplete="new-password" [ngClass]="clase('password')" />
+            <app-error-campo [control]="form.controls.password" [enviado]="enviado()" />
+            @if (form.controls.password.value) {
+              <app-reglas-password [valor]="form.controls.password.value" idLista="reglas-admin" />
+            }
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">{{ editandoId() === 0 ? 'Crear usuario' : 'Guardar cambios' }}</button>
+            <button class="btn btn-outline-secondary" type="button" (click)="cerrar()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    }
+  </div>
+</section>

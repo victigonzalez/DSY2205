@@ -1,0 +1,148 @@
+@let r = moderacion.resumen();
+<section class="cabecera-listado cabecera-moderacion">
+  <div class="container-xl">
+    <h1>Moderación</h1>
+    <p class="mb-0">Revisa el contenido y banea lo que incumpla las normas. El autor verá el motivo.</p>
+  </div>
+</section>
+
+<section class="container-xl seccion">
+  <div class="row g-3 mb-4" aria-label="Resumen del contenido">
+    <div class="col-6 col-md-3"><div class="cifra"><strong>{{ r.temasActivos }}</strong> temas visibles</div></div>
+    <div class="col-6 col-md-3"><div class="cifra cifra-alerta"><strong>{{ r.temasBaneados }}</strong> temas baneados</div></div>
+    <div class="col-6 col-md-3"><div class="cifra"><strong>{{ r.comentariosActivos }}</strong> comentarios visibles</div></div>
+    <div class="col-6 col-md-3"><div class="cifra cifra-alerta"><strong>{{ r.comentariosBaneados }}</strong> comentarios baneados</div></div>
+  </div>
+
+  <div class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center mb-3">
+    <ul class="nav nav-pills" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" [class.active]="pestana() === 'temas'" role="tab" type="button"
+                [attr.aria-selected]="pestana() === 'temas'" (click)="pestana.set('temas')">Temas</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" [class.active]="pestana() === 'comentarios'" role="tab" type="button"
+                [attr.aria-selected]="pestana() === 'comentarios'" (click)="pestana.set('comentarios')">Comentarios</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" [class.active]="pestana() === 'baneados'" role="tab" type="button"
+                [attr.aria-selected]="pestana() === 'baneados'" (click)="pestana.set('baneados')">
+          Baneados <span class="badge text-bg-danger ms-1">{{ r.temasBaneados + r.comentariosBaneados }}</span>
+        </button>
+      </li>
+    </ul>
+    @if (pestana() !== 'baneados') {
+      <div class="buscador-panel">
+        <label for="filtro-mod" class="visually-hidden">Filtrar por texto o usuario</label>
+        <input id="filtro-mod" class="form-control" type="search" placeholder="Filtrar por texto o usuario"
+               [value]="filtro()" (input)="filtro.set($any($event.target).value)" maxlength="60" />
+      </div>
+    }
+  </div>
+
+  @if (objetivo(); as o) {
+    <form class="panel-baneo mb-3" (ngSubmit)="confirmar()" novalidate>
+      <p class="mb-2">Vas a banear {{ o.tipo === 'tema' ? 'el tema' : 'el comentario' }} <strong>"{{ o.titulo }}"</strong>.</p>
+      <label for="motivo" class="form-label fw-semibold">Motivo</label>
+      <div class="d-flex flex-wrap gap-1 mb-2">
+        @for (m of motivosRapidos; track m) {
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="motivo.setValue(m); motivo.markAsDirty()">{{ m }}</button>
+        }
+      </div>
+      <input id="motivo" class="form-control" [formControl]="motivo" required minlength="5" maxlength="250"
+             placeholder="Explica qué norma se incumplió" [ngClass]="clase(motivo, false)" aria-describedby="motivo-error" />
+      <app-error-campo [control]="motivo" idError="motivo-error" />
+      <div class="d-flex gap-2 mt-2">
+        <button class="btn btn-danger btn-sm" type="submit">Confirmar baneo</button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="objetivo.set(null)">Cancelar</button>
+      </div>
+    </form>
+  }
+
+  @switch (pestana()) {
+    @case ('temas') {
+      <div class="table-responsive tabla-panel">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Temas visibles</caption>
+          <thead><tr><th scope="col">Tema</th><th scope="col" class="d-none d-md-table-cell">Autor</th><th scope="col" class="d-none d-lg-table-cell">Publicado</th><th scope="col" class="text-end">Acción</th></tr></thead>
+          <tbody>
+            @for (t of temas(); track t.id) {
+              <tr>
+                <td>
+                  <span class="punto-categoria" [style.--cat]="t.categoria?.color" aria-hidden="true"></span>
+                  <a [routerLink]="['/temas', t.id]">{{ t.titulo }}</a>
+                  <div class="small text-body-secondary d-md-none">&#64;{{ t.autor?.username }}</div>
+                </td>
+                <td class="d-none d-md-table-cell">&#64;{{ t.autor?.username }}</td>
+                <td class="d-none d-lg-table-cell text-body-secondary">{{ t.fechaCreacion | fechaRelativa }}</td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-danger" type="button" (click)="abrir({ tipo: 'tema', id: t.id, titulo: t.titulo })">Banear</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="text-center text-body-secondary py-4">No hay temas que coincidan con el filtro.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @case ('comentarios') {
+      <div class="table-responsive tabla-panel">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Comentarios visibles</caption>
+          <thead><tr><th scope="col">Comentario</th><th scope="col" class="d-none d-md-table-cell">En el tema</th><th scope="col" class="text-end">Acción</th></tr></thead>
+          <tbody>
+            @for (c of comentarios(); track c.id) {
+              <tr>
+                <td>
+                  <div class="texto-recortado">{{ c.contenido }}</div>
+                  <div class="small text-body-secondary">&#64;{{ c.autor?.username }}, {{ c.fechaCreacion | fechaRelativa }}</div>
+                </td>
+                <td class="d-none d-md-table-cell"><a [routerLink]="['/temas', c.temaId]" [fragment]="'comentario-' + c.id">{{ c.tema?.titulo }}</a></td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-danger" type="button" (click)="abrir({ tipo: 'comentario', id: c.id, titulo: c.contenido.slice(0, 60) })">Banear</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="text-center text-body-secondary py-4">No hay comentarios que coincidan con el filtro.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @case ('baneados') {
+      <h2 class="h5">Temas baneados</h2>
+      <div class="table-responsive tabla-panel mb-4">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Temas baneados</caption>
+          <thead><tr><th scope="col">Tema</th><th scope="col">Motivo</th><th scope="col" class="text-end">Acción</th></tr></thead>
+          <tbody>
+            @for (t of temasBaneados(); track t.id) {
+              <tr>
+                <td><a [routerLink]="['/temas', t.id]">{{ t.titulo }}</a><div class="small text-body-secondary">&#64;{{ t.autor?.username }}</div></td>
+                <td>{{ t.motivoBaneo }}</td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-success" type="button" (click)="restaurarTema(t.id)">Restaurar</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="text-center text-body-secondary py-4">No hay temas baneados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <h2 class="h5">Comentarios baneados</h2>
+      <div class="table-responsive tabla-panel">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Comentarios baneados</caption>
+          <thead><tr><th scope="col">Comentario</th><th scope="col">Motivo</th><th scope="col" class="text-end">Acción</th></tr></thead>
+          <tbody>
+            @for (c of comentariosBaneados(); track c.id) {
+              <tr>
+                <td><div class="texto-recortado">{{ c.contenido }}</div><div class="small text-body-secondary">&#64;{{ c.autor?.username }} en "{{ c.tema?.titulo }}"</div></td>
+                <td>{{ c.motivoBaneo }}</td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-success" type="button" (click)="restaurarComentario(c.id)">Restaurar</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="text-center text-body-secondary py-4">No hay comentarios baneados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>
