@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================
+  Arquetipo Maven — Foro en Línea (DSY2205)
+  ============================================================
+  Plantilla para generar NUEVOS microservicios del foro con la
+  misma estructura, configuración y buenas prácticas:
+    · Capas: controller / service / repository / model / dto
+    · Manejo global de errores con el patrón BUILDER
+    · CORS, Actuator, logging y validaciones
+    · Perfiles oracle (Wallet) y local (H2 modo Oracle)
+    · Dockerfile multi-etapa listo para la nube
+  Instalar:  mvn clean install
+  Generar:   ver README.md
+  ============================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>cl.duoc.foro</groupId>
+    <artifactId>foro-microservicio-archetype</artifactId>
+    <version>1.0.0</version>
+    <!-- Se empaqueta un ARQUETIPO (plantilla), no un JAR ejecutable -->
+    <packaging>maven-archetype</packaging>
+
+    <name>Foro en Línea - arquetipo de microservicio</name>
+    <description>Plantilla Spring Boot 3 para los microservicios del foro: capas, patrón Builder, Oracle Cloud y Docker</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>3.4.1</version>
+            </extension>
+        </extensions>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-archetype-plugin</artifactId>
+                <version>3.4.1</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
