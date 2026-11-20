@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Foro en Línea — Microservicios (DSY2205)",
-    "description": "Pruebas de ms-usuarios (8081) y ms-foro (8082). Ejecutar en orden con el Runner: los ids se guardan en variables de la colección.",
+    "description": "Pruebas de ms-usuarios (8081), ms-foro (8082) y ms-moderacion (8083). Ejecutar en orden con el Runner: los ids se guardan en variables de la colección.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,6 +12,10 @@
     {
       "key": "baseForo",
       "value": "http://localhost:8082"
+    },
+    {
+      "key": "baseModeracion",
+      "value": "http://localhost:8083"
     },
     {
       "key": "adminId",
@@ -47,6 +51,108 @@
     }
   ],
   "item": [
+    {
+      "name": "0. Estado de los microservicios",
+      "description": "GET /api/estado: endpoint del arquetipo en cada microservicio.",
+      "item": [
+        {
+          "name": "Estado ms-usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('ACTIVO', () => pm.expect(pm.response.json().estado).to.eql('ACTIVO'));",
+                  "pm.test('Generado desde el arquetipo', () => pm.expect(pm.response.json().origen).to.eql('foro-microservicio-archetype'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUsuarios}}/api/estado",
+              "host": [
+                "{{baseUsuarios}}"
+              ],
+              "path": [
+                "api",
+                "estado"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Estado ms-foro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('ACTIVO', () => pm.expect(pm.response.json().estado).to.eql('ACTIVO'));",
+                  "pm.test('Generado desde el arquetipo', () => pm.expect(pm.response.json().origen).to.eql('foro-microservicio-archetype'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseForo}}/api/estado",
+              "host": [
+                "{{baseForo}}"
+              ],
+              "path": [
+                "api",
+                "estado"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Estado ms-moderacion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('ACTIVO', () => pm.expect(pm.response.json().estado).to.eql('ACTIVO'));",
+                  "pm.test('Generado desde el arquetipo', () => pm.expect(pm.response.json().origen).to.eql('foro-microservicio-archetype'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseModeracion}}/api/estado",
+              "host": [
+                "{{baseModeracion}}"
+              ],
+              "path": [
+                "api",
+                "estado"
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
     {
       "name": "1. ms-usuarios (puerto 8081)",
       "description": "Control de usuarios (crear, modificar, eliminar) e inicio de sesión.",
@@ -1550,9 +1656,46 @@
       ]
     },
     {
-      "name": "4. ms-foro · Moderación (ADMIN / MODERADOR)",
+      "name": "4. ms-moderacion (puerto 8083) · ADMIN / MODERADOR",
       "description": "Banear temas o comentarios que incumplan las normas del foro.",
       "item": [
+        {
+          "name": "Resumen de moderación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde JSON', () => pm.response.to.be.json);",
+                  "pm.test('Trae los 4 contadores', () => pm.expect(pm.response.json()).to.have.all.keys('temasActivos','temasBaneados','comentariosActivos','comentariosBaneados'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Usuario-Id",
+                "value": "{{moderadorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseModeracion}}/api/moderacion/resumen",
+              "host": [
+                "{{baseModeracion}}"
+              ],
+              "path": [
+                "api",
+                "moderacion",
+                "resumen"
+              ],
+              "query": []
+            }
+          }
+        },
         {
           "name": "Moderar como USUARIO → 403",
           "event": [
@@ -1580,9 +1723,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/comentarios/{{comentarioId}}/banear",
+              "raw": "{{baseModeracion}}/api/moderacion/comentarios/{{comentarioId}}/banear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1632,9 +1775,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/comentarios/{{comentarioId}}/banear",
+              "raw": "{{baseModeracion}}/api/moderacion/comentarios/{{comentarioId}}/banear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1717,9 +1860,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/temas/{{temaId}}/banear",
+              "raw": "{{baseModeracion}}/api/moderacion/temas/{{temaId}}/banear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1799,9 +1942,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/temas/{{temaId}}/banear",
+              "raw": "{{baseModeracion}}/api/moderacion/temas/{{temaId}}/banear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1847,9 +1990,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/temas",
+              "raw": "{{baseModeracion}}/api/moderacion/temas",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1883,9 +2026,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/comentarios",
+              "raw": "{{baseModeracion}}/api/moderacion/comentarios",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1920,9 +2063,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/temas/{{temaId}}/desbanear",
+              "raw": "{{baseModeracion}}/api/moderacion/temas/{{temaId}}/desbanear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
@@ -1958,9 +2101,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseForo}}/api/moderacion/comentarios/{{comentarioId}}/desbanear",
+              "raw": "{{baseModeracion}}/api/moderacion/comentarios/{{comentarioId}}/desbanear",
               "host": [
-                "{{baseForo}}"
+                "{{baseModeracion}}"
               ],
               "path": [
                 "api",
