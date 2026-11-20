@@ -11,10 +11,15 @@ Construido con **Spring Boot 3** sobre **Java 17** y una base de datos **Oracle 
 | Microservicio | Puerto | Responsabilidad |
 |---------------|--------|-----------------|
 | `ms-usuarios` | 8081 | Control de usuarios (crear, modificar, eliminar, listar) e inicio de sesión |
-| `ms-foro`     | 8082 | Búsqueda, visualización y publicación de temas, y comentarios. Incluye moderación (banear) |
+| `ms-foro`     | 8082 | Búsqueda, visualización y publicación de temas, y comentarios |
+| `ms-moderacion` | 8083 | Gestión de publicaciones y comentarios por un ADMIN o MODERADOR (banear y desbanear) |
 
-Ambos comparten el mismo esquema de Oracle. `ms-usuarios` es el **dueño** de las tablas `USUARIOS` y `ROLES`.
-`ms-foro` solo las **lee** (entidades `@Immutable`) para identificar al autor y validar su rol.
+Los tres comparten el mismo esquema de Oracle. `ms-usuarios` es el **dueño** de las tablas `USUARIOS` y `ROLES`;
+`ms-foro` y `ms-moderacion` solo las **leen** (entidades `@Immutable`) para identificar al autor y validar su rol.
+
+Los tres siguen el **arquetipo Maven** [`foro-microservicio-archetype`](arquetipo/README.md): `ms-moderacion` se generó con
+`mvn archetype:generate`, y `ms-usuarios` y `ms-foro` se alinearon a él. El arquetipo aporta el **patrón de diseño Builder**
+(`ErrorResponseBuilder`), con el que se construyen todas las respuestas de error.
 
 ## Estructura del repositorio
 
@@ -24,6 +29,8 @@ foro-backend/
 │   └── script_foro.sql            ← tablas + datos de ejemplo (Oracle)
 ├── ms-usuarios/                   ← microservicio 1 (cl.duoc.foro.usuarios)
 ├── ms-foro/                       ← microservicio 2 (cl.duoc.foro.publicaciones)
+├── ms-moderacion/                 ← microservicio 3 (cl.duoc.foro.moderacion), generado con el arquetipo
+├── arquetipo/                     ← arquetipo Maven foro-microservicio-archetype
 └── postman/
     └── Foro_Microservicios.postman_collection.json
 ```
@@ -36,7 +43,7 @@ service/      → lógica de negocio y reglas de permisos (@Service)
 repository/   → acceso a datos con Spring Data JPA (@Repository)
 model/        → entidades JPA mapeadas a las tablas de Oracle
 dto/          → datos de entrada (con validaciones) y de salida (JSON)
-exception/    → manejo global de errores (@RestControllerAdvice)
+exception/    → manejo global de errores (@RestControllerAdvice) + ErrorResponseBuilder (patrón Builder)
 config/       → CORS y beans de configuración
 ```
 
@@ -99,8 +106,9 @@ En Windows usa `mvnw.cmd` en lugar de `./mvnw`.
 
 4. Levanta cada microservicio en su propia terminal:
    ```bash
-   cd ms-usuarios && ./mvnw spring-boot:run
-   cd ms-foro     && ./mvnw spring-boot:run
+   cd ms-usuarios   && ./mvnw spring-boot:run
+   cd ms-foro       && ./mvnw spring-boot:run
+   cd ms-moderacion && ./mvnw spring-boot:run
    ```
 
 ### Opción B — Sin Oracle (perfil `local`, H2 en modo Oracle)
@@ -109,8 +117,9 @@ Ambos microservicios comparten una base H2 en archivo (`~/foro-h2`), igual que c
 **Levanta primero `ms-usuarios`**, porque es el que crea las tablas y carga los datos al iniciar:
 
 ```bash
-cd ms-usuarios && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-cd ms-foro     && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+cd ms-usuarios   && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+cd ms-foro       && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+cd ms-moderacion && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 Cada vez que reinicias `ms-usuarios`, los datos vuelven al estado inicial.
@@ -119,8 +128,9 @@ Consola H2: http://localhost:8081/h2-console (JDBC URL `jdbc:h2:file:~/foro-h2/f
 ### Tests automáticos
 
 ```bash
-cd ms-usuarios && ./mvnw test     # 23 tests
-cd ms-foro     && ./mvnw test     # 29 tests
+cd ms-usuarios   && ./mvnw test     # 29 tests
+cd ms-foro       && ./mvnw test     # 31 tests
+cd ms-moderacion && ./mvnw test     # 13 tests
 ```
 
 Los tests usan una base H2 en memoria propia y no necesitan conexión a Oracle.
@@ -169,10 +179,13 @@ Los tests usan una base H2 en memoria propia y no necesitan conexión a Oracle.
 | PUT | `/api/comentarios/{id}` | Editar comentario | Solo el autor |
 | DELETE | `/api/comentarios/{id}` | Eliminar comentario | Autor, MODERADOR o ADMIN |
 
-**Moderación** (siempre con `X-Usuario-Id` de un ADMIN o MODERADOR)
+### ms-moderacion — `http://localhost:8083`
+
+Siempre con `X-Usuario-Id` de un ADMIN o MODERADOR.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
+| GET | `/api/moderacion/resumen` | Contenido activo y baneado (temas y comentarios) |
 | GET | `/api/moderacion/temas` | Temas baneados |
 | GET | `/api/moderacion/comentarios` | Comentarios baneados |
 | PUT | `/api/moderacion/temas/{id}/banear` | Banear tema. Body: `{"motivo": "..."}` |
@@ -212,7 +225,7 @@ Todos los errores responden con la misma estructura, gracias a `GlobalExceptionH
 1. Importa `postman/Foro_Microservicios.postman_collection.json` en Postman.
 2. Con ambos microservicios levantados, abre el **Runner** y ejecuta la colección completa **en orden**.
    Las peticiones guardan los ids (usuario, tema, comentario, categoría) en variables de la colección.
-3. Resultado esperado: **52 peticiones y 127 validaciones exitosas**. La colección se puede ejecutar varias veces seguidas.
+3. Resultado esperado: **56 peticiones y 142 validaciones exitosas**. La colección se puede ejecutar varias veces seguidas.
 
 Para correrla por consola: `npx newman run postman/Foro_Microservicios.postman_collection.json`
 
@@ -227,5 +240,6 @@ Para correrla por consola: `npx newman run postman/Foro_Microservicios.postman_c
   - CORS configurado (`app.cors.origenes`).
   - Credenciales de Oracle en variables de entorno, con el Wallet fuera de Git.
 - **Arquitectura en capas:** controller → service → repository.
+- **Arquetipo Maven** con el **patrón Builder** para las respuestas de error, y `GET /api/estado` en cada microservicio.
 - **Consultas complejas en JPQL:** filtros combinados, `LEFT JOIN`, `GROUP BY`, `COUNT` y paginación.
 - **Actuator:** `/actuator/health` en cada microservicio.

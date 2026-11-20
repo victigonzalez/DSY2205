@@ -1,4 +1,4 @@
-package cl.duoc.foro.publicaciones.dto;
+package cl.duoc.foro.moderacion.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

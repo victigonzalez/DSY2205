@@ -6,11 +6,12 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Formato único para TODAS las respuestas de error del microservicio.
+ * [Arquetipo] Contrato JSON único para TODAS las respuestas de error.
+ * No se construye directamente: se usa ErrorResponseBuilder (patrón Builder).
  *
- * @param detalles solo se incluye en errores de validación: campo → mensaje.
+ * @param detalles solo en errores de validación: campo → mensaje.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record ErrorResponse(
         LocalDateTime fecha,
         int status,

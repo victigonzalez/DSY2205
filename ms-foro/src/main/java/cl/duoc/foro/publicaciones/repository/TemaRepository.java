@@ -57,7 +57,5 @@ public interface TemaRepository extends JpaRepository<Tema, Long> {
             """)
     List<TemaPopular> populares(@Param("estado") Estado estado, Pageable pagina);
 
-    List<Tema> findByEstadoOrderByIdAsc(Estado estado);
-
     boolean existsByCategoriaId(Long categoriaId);
 }

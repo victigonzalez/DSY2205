@@ -1,6 +1,6 @@
-package cl.duoc.foro.publicaciones.controller;
+package cl.duoc.foro.moderacion.controller;
 
-import static cl.duoc.foro.publicaciones.service.PermisoService.HEADER_USUARIO;
+import static cl.duoc.foro.moderacion.service.PermisoService.HEADER_USUARIO;
 
 import java.util.List;
 
@@ -12,16 +12,18 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import cl.duoc.foro.publicaciones.dto.BaneoRequest;
-import cl.duoc.foro.publicaciones.dto.ComentarioResponse;
-import cl.duoc.foro.publicaciones.dto.TemaResponse;
-import cl.duoc.foro.publicaciones.service.ModeracionService;
+import cl.duoc.foro.moderacion.dto.BaneoRequest;
+import cl.duoc.foro.moderacion.dto.ComentarioResponse;
+import cl.duoc.foro.moderacion.dto.ResumenModeracion;
+import cl.duoc.foro.moderacion.dto.TemaResponse;
+import cl.duoc.foro.moderacion.service.ModeracionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
- * API REST de moderación. Todo requiere rol ADMIN o MODERADOR (header X-Usuario-Id).
+ * API REST de moderación (microservicio 3, puerto 8083). Todo requiere rol ADMIN o MODERADOR (header X-Usuario-Id).
  *
+ * GET /api/moderacion/resumen                        → contenido activo vs. baneado
  * GET /api/moderacion/temas                          → temas baneados
  * GET /api/moderacion/comentarios                    → comentarios baneados
  * PUT /api/moderacion/temas/{id}/banear              → banear tema  (body: {"motivo": "..."})
@@ -35,6 +37,11 @@ import lombok.RequiredArgsConstructor;
 public class ModeracionController {
 
     private final ModeracionService moderacionService;
+
+    @GetMapping("/resumen")
+    public ResumenModeracion resumen(@RequestHeader(HEADER_USUARIO) Long usuarioId) {
+        return moderacionService.resumen(usuarioId);
+    }
 
     @GetMapping("/temas")
     public List<TemaResponse> temasBaneados(@RequestHeader(HEADER_USUARIO) Long usuarioId) {

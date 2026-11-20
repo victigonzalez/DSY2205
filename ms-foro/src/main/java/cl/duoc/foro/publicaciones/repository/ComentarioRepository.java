@@ -17,8 +17,6 @@ public interface ComentarioRepository extends JpaRepository<Comentario, Long> {
     /** Comentarios visibles de un tema, del más antiguo al más nuevo (orden de conversación). */
     List<Comentario> findByTemaIdAndEstadoOrderByFechaCreacionAscIdAsc(Long temaId, Estado estado);
 
-    List<Comentario> findByEstadoOrderByIdAsc(Estado estado);
-
     /** Cantidad de comentarios con cierto estado por tema: filas [idTema, cantidad]. */
     @Query("""
             SELECT c.tema.id, COUNT(c.id) FROM Comentario c
