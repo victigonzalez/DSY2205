@@ -1,5 +1,5 @@
 # ============================================================
-# Ágora — Foro en Línea · Docker Compose (construcción local)
+# Ágora — Foro en Línea · Docker Compose (ejecución local con Docker Desktop)
 # ------------------------------------------------------------
 # Construye y levanta los 3 microservicios + el frontend Angular.
 # Los microservicios se conectan a Oracle Autonomous Database (Oracle Cloud)
@@ -39,14 +39,14 @@ services:
   ms-usuarios:
     <<: *backend
     build: ./ms-usuarios
-    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-usuarios:1.0
+    image: agora-ms-usuarios:1.0
     container_name: agora-ms-usuarios
     ports: ["8081:8081"]
 
   ms-foro:
     <<: *backend
     build: ./ms-foro
-    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-foro:1.0
+    image: agora-ms-foro:1.0
     container_name: agora-ms-foro
     ports: ["8082:8082"]
     depends_on: [ms-usuarios]
@@ -54,14 +54,14 @@ services:
   ms-moderacion:
     <<: *backend
     build: ./ms-moderacion
-    image: ${DOCKERHUB_USUARIO:-agora}/agora-ms-moderacion:1.0
+    image: agora-ms-moderacion:1.0
     container_name: agora-ms-moderacion
     ports: ["8083:8083"]
     depends_on: [ms-usuarios]
 
   frontend:
     build: ./agora-frontend
-    image: ${DOCKERHUB_USUARIO:-agora}/agora-frontend:1.0
+    image: agora-frontend:1.0
     container_name: agora-frontend
     ports: ["8080:80"]
     networks: [agora-red]
