@@ -36,7 +36,7 @@ Los tres siguen el **arquetipo Maven** [`foro-microservicio-archetype`](arquetip
 ## Estructura del repositorio
 
 ```
-foro-backend/
+DSY2205/
 ├── bd/
 │   └── script_foro.sql            ← tablas + datos de ejemplo (Oracle)
 ├── ms-usuarios/                   ← microservicio 1 (cl.duoc.foro.usuarios)
